@@ -2,11 +2,13 @@ from abc import ABC, abstractmethod
 
 
 class BaseLLM(ABC):
+
     @abstractmethod
     async def generate(
         self,
-        system_prompt: str,
-        user_prompt: str,
+        messages: list[dict[str, str]],
+        temperature: float = 0.7,
+        top_p: float = 0.9,
+        max_tokens: int = 500,
     ) -> str:
-        """Generate a response."""
         pass

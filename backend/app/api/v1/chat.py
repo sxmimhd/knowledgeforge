@@ -1,29 +1,50 @@
 from fastapi import APIRouter, Depends
 
-from app.schemas.common import APIResponse
+from app.schemas.chat import ChatRequest
 from app.services.llm.base import BaseLLM
 from app.services.llm.dependencies import get_llm
 
-router = APIRouter(
-    prefix="/chat",
-    tags=["Chat"],
-)
+router = APIRouter()
 
 
-@router.post("/", response_model=APIResponse)
+@router.post("/")
 async def chat(
-    message: str,
+    request: ChatRequest,
     llm: BaseLLM = Depends(get_llm),
-) -> APIResponse:
-    response = await llm.generate(
-        system_prompt="You are KnowledgeForge, a helpful AI assistant.",
-        user_prompt=message,
+):
+    messages = [
+        {
+            "role": "system",
+            "content": request.system_prompt,
+        }
+    ]
+
+    messages.extend(
+        {
+            "role": message.role,
+            "content": message.content,
+        }
+        for message in request.history
     )
 
-    return APIResponse(
-        success=True,
-        message="Response generated successfully",
-        data={
+    messages.append(
+        {
+            "role": "user",
+            "content": request.message,
+        }
+    )
+
+    response = await llm.generate(
+        messages=messages,
+        temperature=request.temperature,
+        top_p=request.top_p,
+        max_tokens=request.max_tokens,
+    )
+
+    return {
+        "success": True,
+        "message": "Response generated successfully",
+        "data": {
             "response": response,
         },
-    )
+    }
