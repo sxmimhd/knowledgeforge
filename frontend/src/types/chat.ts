@@ -12,4 +12,6 @@ export interface ChatRequest {
   temperature: number;
   top_p: number;
   max_tokens: number;
+  history?: ChatMessage[];
+  stream?: boolean;
 }

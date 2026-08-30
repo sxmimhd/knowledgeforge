@@ -2,31 +2,54 @@ import type { ChatRequest } from "../types/chat";
 
 const API_BASE_URL = "http://127.0.0.1:8000/api/v1";
 
-export async function sendChatMessage(
+export async function streamChatMessage(
   request: ChatRequest,
-): Promise<string> {
-  const params = new URLSearchParams({
-    message: request.message,
-  });
-
-  const response = await fetch(
-    `${API_BASE_URL}/chat/?${params.toString()}`,
-    {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-      },
+  onChunk: (chunk: string) => void,
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/chat/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "text/plain",
     },
-  );
+    body: JSON.stringify({
+      ...request,
+      stream: true,
+    }),
+  });
 
   if (!response.ok) {
     const errorText = await response.text();
+
     throw new Error(
       errorText || `Request failed with status ${response.status}`,
     );
   }
 
-  const result = await response.json();
+  if (!response.body) {
+    throw new Error("Streaming is not supported by this browser.");
+  }
 
-  return result.data.response;
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      const chunk = decoder.decode(value, {
+        stream: true,
+      });
+
+      if (chunk) {
+        onChunk(chunk);
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
 }

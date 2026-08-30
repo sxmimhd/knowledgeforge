@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import ChatInput from "./components/chat/ChatInput";
 import ChatWindow from "./components/chat/ChatWindow";
-import { sendChatMessage } from "./services/api";
+import { streamChatMessage } from "./services/api";
 import type { ChatMessage } from "./types/chat";
 
 function App() {
@@ -16,43 +16,59 @@ function App() {
       content: message,
     };
 
-    setMessages((current) => [...current, userMessage]);
+    const assistantId = crypto.randomUUID();
+
+    const assistantMessage: ChatMessage = {
+      id: assistantId,
+      role: "assistant",
+      content: "",
+    };
+
+    setMessages((current) => [
+      ...current,
+      userMessage,
+      assistantMessage,
+    ]);
+
     setLoading(true);
 
     try {
-      const response = await sendChatMessage({
-        message,
-        system_prompt:
-          "You are KnowledgeForge, a helpful AI assistant.",
-        temperature: 0.7,
-        top_p: 0.9,
-        max_tokens: 500,
-      });
-
-      const assistantMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: response,
-      };
-
-      setMessages((current) => [
-        ...current,
-        assistantMessage,
-      ]);
+      await streamChatMessage(
+        {
+          message,
+          system_prompt:
+            "You are KnowledgeForge, a helpful AI assistant.",
+          temperature: 0.7,
+          top_p: 0.9,
+          max_tokens: 500,
+        },
+        (chunk) => {
+          setMessages((current) =>
+            current.map((item) =>
+              item.id === assistantId
+                ? {
+                    ...item,
+                    content: item.content + chunk,
+                  }
+                : item,
+            ),
+          );
+        },
+      );
     } catch (error) {
-      const assistantMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content:
-          error instanceof Error
-            ? `Error: ${error.message}`
-            : "An unexpected error occurred.",
-      };
-
-      setMessages((current) => [
-        ...current,
-        assistantMessage,
-      ]);
+      setMessages((current) =>
+        current.map((item) =>
+          item.id === assistantId
+            ? {
+                ...item,
+                content:
+                  error instanceof Error
+                    ? `Error: ${error.message}`
+                    : "An unexpected error occurred.",
+              }
+            : item,
+        ),
+      );
     } finally {
       setLoading(false);
     }

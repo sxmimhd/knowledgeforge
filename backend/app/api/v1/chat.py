@@ -1,45 +1,30 @@
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 
 from app.schemas.chat import ChatRequest
-from app.services.llm.base import BaseLLM
-from app.services.llm.dependencies import get_llm
+from app.services.chat.dependencies import get_chat_service
+from app.services.chat.service import ChatService
 
-router = APIRouter()
+router = APIRouter(prefix="/chat", tags=["Chat"])
 
 
 @router.post("/")
 async def chat(
     request: ChatRequest,
-    llm: BaseLLM = Depends(get_llm),
+    chat_service: ChatService = Depends(get_chat_service),
 ):
-    messages = [
-        {
-            "role": "system",
-            "content": request.system_prompt,
-        }
-    ]
+    if request.stream:
 
-    messages.extend(
-        {
-            "role": message.role,
-            "content": message.content,
-        }
-        for message in request.history
-    )
+        async def generate():
+            async for chunk in chat_service.stream(request):
+                yield chunk
 
-    messages.append(
-        {
-            "role": "user",
-            "content": request.message,
-        }
-    )
+        return StreamingResponse(
+            generate(),
+            media_type="text/plain",
+        )
 
-    response = await llm.generate(
-        messages=messages,
-        temperature=request.temperature,
-        top_p=request.top_p,
-        max_tokens=request.max_tokens,
-    )
+    response = await chat_service.generate(request)
 
     return {
         "success": True,
