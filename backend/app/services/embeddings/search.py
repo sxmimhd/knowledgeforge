@@ -5,29 +5,44 @@ from app.services.embeddings.service import EmbeddingService
 
 class SemanticSearch:
     """
-    Simple in-memory semantic search engine.
+    In-memory semantic search engine.
 
-    This is intentionally NOT using Qdrant yet.
-    We are learning the retrieval mechanics first.
+    This is intentionally kept separate from the vector database.
+    Qdrant will replace this storage/retrieval layer in Module 3.
     """
 
     def __init__(self, embedding_service: EmbeddingService):
         self.embedding_service = embedding_service
         self.documents: List[Dict[str, Any]] = []
 
-    def add_documents(self, documents: List[str]) -> None:
+    def add_documents(
+        self,
+        documents: List[Dict[str, Any]],
+    ) -> None:
         """
-        Embed and store documents.
+        Add documents and generate their embeddings.
+
+        Each document should contain:
+            {
+                "text": "...",
+                "metadata": {...}
+            }
         """
 
-        embeddings = self.embedding_service.embed_texts(documents)
+        texts = [
+            document["text"]
+            for document in documents
+        ]
+
+        embeddings = self.embedding_service.embed_texts(texts)
 
         self.documents = [
             {
-                "text": text,
+                "text": document["text"],
+                "metadata": document.get("metadata", {}),
                 "embedding": embedding,
             }
-            for text, embedding in zip(documents, embeddings)
+            for document, embedding in zip(documents, embeddings)
         ]
 
     def search(
@@ -36,10 +51,13 @@ class SemanticSearch:
         top_k: int = 3,
     ) -> List[Dict[str, Any]]:
         """
-        Find the most semantically similar documents.
+        Retrieve the most semantically similar documents.
         """
 
         if not self.documents:
+            return []
+
+        if top_k <= 0:
             return []
 
         query_embedding = self.embedding_service.embed_text(query)
@@ -56,6 +74,7 @@ class SemanticSearch:
                 {
                     "text": document["text"],
                     "score": score,
+                    "metadata": document["metadata"],
                 }
             )
 

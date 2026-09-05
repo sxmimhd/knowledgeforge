@@ -3,14 +3,62 @@ from app.services.embeddings.search import SemanticSearch
 
 
 documents = [
-    "KnowledgeForge is an AI knowledge platform.",
-    "Users can upload documents to their workspace.",
-    "PDF files can be processed and converted into text.",
-    "The system uses embeddings for semantic search.",
-    "Qdrant stores vector embeddings for retrieval.",
-    "Python is a popular programming language.",
-    "The weather today is sunny and warm.",
-    "A neural network consists of layers of connected neurons.",
+    {
+        "text": "KnowledgeForge is an AI knowledge platform.",
+        "metadata": {
+            "document_id": "doc_001",
+            "filename": "knowledgeforge.txt",
+        },
+    },
+    {
+        "text": "Users can upload documents to their workspace.",
+        "metadata": {
+            "document_id": "doc_002",
+            "filename": "workspace-guide.txt",
+        },
+    },
+    {
+        "text": "PDF files can be processed and converted into text.",
+        "metadata": {
+            "document_id": "doc_003",
+            "filename": "document-processing.txt",
+        },
+    },
+    {
+        "text": "The system uses embeddings for semantic search.",
+        "metadata": {
+            "document_id": "doc_004",
+            "filename": "search-guide.txt",
+        },
+    },
+    {
+        "text": "Qdrant stores vector embeddings for retrieval.",
+        "metadata": {
+            "document_id": "doc_005",
+            "filename": "qdrant-guide.txt",
+        },
+    },
+    {
+        "text": "Python is a popular programming language.",
+        "metadata": {
+            "document_id": "doc_006",
+            "filename": "python.txt",
+        },
+    },
+    {
+        "text": "The weather today is sunny and warm.",
+        "metadata": {
+            "document_id": "doc_007",
+            "filename": "weather.txt",
+        },
+    },
+    {
+        "text": "A neural network consists of layers of connected neurons.",
+        "metadata": {
+            "document_id": "doc_008",
+            "filename": "neural-networks.txt",
+        },
+    },
 ]
 
 
@@ -46,6 +94,12 @@ def main():
             print(
                 f"\n{index}. Score: {result['score']:.4f}"
             )
+
+            print(
+                f"   Source: "
+                f"{result['metadata'].get('filename', 'unknown')}"
+            )
+
             print(f"   {result['text']}")
 
 
