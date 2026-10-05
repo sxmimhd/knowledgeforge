@@ -1,32 +1,27 @@
-from typing import List, Dict, Any
+from typing import Any
 
 from app.services.embeddings.service import EmbeddingService
+from app.services.vector_store.qdrant import QdrantVectorStore
 
 
 class SemanticSearch:
-    """
-    In-memory semantic search engine.
+    def __init__(
+        self,
+        collection_name: str = "knowledgeforge",
+    ):
+        self.embedding_service = EmbeddingService()
 
-    This is intentionally kept separate from the vector database.
-    Qdrant will replace this storage/retrieval layer in Module 3.
-    """
-
-    def __init__(self, embedding_service: EmbeddingService):
-        self.embedding_service = embedding_service
-        self.documents: List[Dict[str, Any]] = []
+        self.vector_store = QdrantVectorStore(
+            collection_name=collection_name,
+            vector_size=384,
+        )
 
     def add_documents(
         self,
-        documents: List[Dict[str, Any]],
+        documents: list[dict[str, Any]],
     ) -> None:
         """
-        Add documents and generate their embeddings.
-
-        Each document should contain:
-            {
-                "text": "...",
-                "metadata": {...}
-            }
+        Embed documents and store their vectors in Qdrant.
         """
 
         texts = [
@@ -34,53 +29,29 @@ class SemanticSearch:
             for document in documents
         ]
 
-        embeddings = self.embedding_service.embed_texts(texts)
+        vectors = self.embedding_service.embed_texts(texts)
 
-        self.documents = [
-            {
-                "text": document["text"],
-                "metadata": document.get("metadata", {}),
-                "embedding": embedding,
-            }
-            for document, embedding in zip(documents, embeddings)
-        ]
+        self.vector_store.add_documents(
+            documents=documents,
+            vectors=vectors,
+        )
 
     def search(
         self,
         query: str,
         top_k: int = 3,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
-        Retrieve the most semantically similar documents.
+        Convert the query into an embedding and
+        retrieve the most semantically similar documents.
         """
 
-        if not self.documents:
-            return []
+        query_vector = self.embedding_service.embed_text(query)
 
-        if top_k <= 0:
-            return []
-
-        query_embedding = self.embedding_service.embed_text(query)
-
-        results = []
-
-        for document in self.documents:
-            score = self.embedding_service.cosine_similarity(
-                query_embedding,
-                document["embedding"],
-            )
-
-            results.append(
-                {
-                    "text": document["text"],
-                    "score": score,
-                    "metadata": document["metadata"],
-                }
-            )
-
-        results.sort(
-            key=lambda result: result["score"],
-            reverse=True,
+        return self.vector_store.search(
+            query_vector=query_vector,
+            top_k=top_k,
         )
 
-        return results[:top_k]
+    def count(self) -> int:
+        return self.vector_store.count()
