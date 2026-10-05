@@ -61,10 +61,31 @@ class QdrantVectorStore:
         self,
         query_vector: list[float],
         top_k: int = 3,
+        metadata_filter: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
+        query_filter = None
+
+        if metadata_filter:
+            from qdrant_client.models import FieldCondition, Filter, MatchValue
+
+            conditions = []
+
+            for field, value in metadata_filter.items():
+                conditions.append(
+                    FieldCondition(
+                        key=f"metadata.{field}",
+                        match=MatchValue(value=value),
+                    )
+                )
+
+            query_filter = Filter(
+                must=conditions,
+            )
+
         results = self.client.query_points(
             collection_name=self.collection_name,
             query=query_vector,
+            query_filter=query_filter,
             limit=top_k,
             with_payload=True,
         ).points
@@ -77,7 +98,6 @@ class QdrantVectorStore:
             }
             for result in results
         ]
-
     def count(self) -> int:
         result = self.client.count(
             collection_name=self.collection_name,

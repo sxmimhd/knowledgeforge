@@ -40,17 +40,14 @@ class SemanticSearch:
         self,
         query: str,
         top_k: int = 3,
+        metadata_filter: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
-        """
-        Convert the query into an embedding and
-        retrieve the most semantically similar documents.
-        """
-
         query_vector = self.embedding_service.embed_text(query)
 
         return self.vector_store.search(
             query_vector=query_vector,
             top_k=top_k,
+            metadata_filter=metadata_filter,
         )
 
     def count(self) -> int:
