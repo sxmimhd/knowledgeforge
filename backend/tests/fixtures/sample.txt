@@ -1,0 +1,5 @@
+﻿KnowledgeForge is an enterprise RAG knowledge platform.
+
+It allows users to upload documents and ask questions about their knowledge.
+
+Documents are converted into embeddings and stored in a vector database.
