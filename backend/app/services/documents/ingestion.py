@@ -9,7 +9,7 @@ from app.services.vector_store.qdrant import QdrantVectorStore
 
 class DocumentIngestionService:
     """
-    Complete local document ingestion pipeline.
+    Document ingestion pipeline:
 
     File
       -> extraction
@@ -30,11 +30,13 @@ class DocumentIngestionService:
         self.embeddings = embeddings or EmbeddingService()
         self.vector_store = vector_store or QdrantVectorStore()
 
-    def ingest_file(self, file_path: str | Path) -> dict[str, Any]:
-        # 1. Extract
+    def ingest_file(
+        self,
+        file_path: str | Path,
+    ) -> dict[str, Any]:
+
         document = self.extractor.extract(file_path)
 
-        # 2. Chunk
         chunks = self.chunker.chunk(
             text=document["text"],
             metadata=document["metadata"],
@@ -45,11 +47,10 @@ class DocumentIngestionService:
                 f"No chunks generated from {file_path}"
             )
 
-        # 3. Generate embeddings
         texts = [chunk["text"] for chunk in chunks]
+
         vectors = self.embeddings.embed_texts(texts)
 
-        # 4. Store in Qdrant
         self.vector_store.add_documents(
             documents=chunks,
             vectors=vectors,
@@ -61,5 +62,39 @@ class DocumentIngestionService:
             "characters": len(document["text"]),
             "chunks": len(chunks),
             "vectors": len(vectors),
-            "qdrant_count": self.vector_store.count(),
         }
+
+    def ingest_files(
+        self,
+        file_paths: list[str | Path],
+    ) -> list[dict[str, Any]]:
+
+        results = []
+
+        for file_path in file_paths:
+            result = self.ingest_file(file_path)
+            results.append(result)
+
+        return results
+
+    def ingest_directory(
+        self,
+        directory: str | Path,
+    ) -> list[dict[str, Any]]:
+
+        directory = Path(directory)
+
+        if not directory.exists():
+            raise ValueError(
+                f"Directory does not exist: {directory}"
+            )
+
+        files = [
+            path
+            for path in directory.iterdir()
+            if path.is_file()
+            and path.suffix.lower()
+            in self.extractor.SUPPORTED_EXTENSIONS
+        ]
+
+        return self.ingest_files(files)
