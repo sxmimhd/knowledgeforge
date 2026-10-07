@@ -46,15 +46,12 @@ Knowledge Context:
             },
         ]
 
-    async def generate(
+    def _prepare(
         self,
         query: str,
-        top_k: int = 5,
-        metadata_filter: dict[str, Any] | None = None,
-        temperature: float = 0.2,
-        max_tokens: int = 500,
-    ) -> dict[str, Any]:
-
+        top_k: int,
+        metadata_filter: dict[str, Any] | None,
+    ):
         results = self.retrieval.retrieve(
             query=query,
             top_k=top_k,
@@ -68,12 +65,6 @@ Knowledge Context:
             context=context,
         )
 
-        answer = await self.llm.generate(
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-
         sources = []
 
         for result in results:
@@ -82,10 +73,34 @@ Knowledge Context:
             sources.append(
                 {
                     "filename": metadata.get("filename"),
-                    "score": result.get("score"),
+                    "source": metadata.get("source"),
                     "chunk_index": metadata.get("chunk_index"),
+                    "score": result.get("score"),
                 }
             )
+
+        return results, messages, sources
+
+    async def generate(
+        self,
+        query: str,
+        top_k: int = 5,
+        metadata_filter: dict[str, Any] | None = None,
+        temperature: float = 0.2,
+        max_tokens: int = 500,
+    ) -> dict[str, Any]:
+
+        results, messages, sources = self._prepare(
+            query=query,
+            top_k=top_k,
+            metadata_filter=metadata_filter,
+        )
+
+        answer = await self.llm.generate(
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
 
         return {
             "answer": answer,
@@ -101,17 +116,10 @@ Knowledge Context:
         temperature: float = 0.2,
         max_tokens: int = 500,
     ):
-        results = self.retrieval.retrieve(
+        results, messages, sources = self._prepare(
             query=query,
             top_k=top_k,
             metadata_filter=metadata_filter,
-        )
-
-        context = self.retrieval.build_context(results)
-
-        messages = self._build_prompt(
-            query=query,
-            context=context,
         )
 
         async for token in self.llm.stream(
@@ -120,3 +128,37 @@ Knowledge Context:
             max_tokens=max_tokens,
         ):
             yield token
+
+    async def stream_with_sources(
+        self,
+        query: str,
+        top_k: int = 5,
+        metadata_filter: dict[str, Any] | None = None,
+        temperature: float = 0.2,
+        max_tokens: int = 500,
+    ):
+        results, messages, sources = self._prepare(
+            query=query,
+            top_k=top_k,
+            metadata_filter=metadata_filter,
+        )
+
+        yield {
+            "type": "sources",
+            "sources": sources,
+            "retrieved_chunks": len(results),
+        }
+
+        async for token in self.llm.stream(
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        ):
+            yield {
+                "type": "token",
+                "content": token,
+            }
+
+        yield {
+            "type": "done",
+        }

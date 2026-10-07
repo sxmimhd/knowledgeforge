@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import FastAPI
-
+from app.api.v1 import rag
 from app.core.config import settings
 from app.core.lifespan import lifespan
 from app.core.logging import setup_logging
@@ -40,6 +40,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+app.include_router(rag.router, prefix="/api/v1")
 
 @app.get("/")
 def root():
