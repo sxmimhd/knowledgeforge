@@ -2,7 +2,14 @@ from typing import Any
 from uuid import uuid4
 
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, PointStruct, VectorParams
+from qdrant_client.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
+    PointStruct,
+    VectorParams,
+)
 
 
 class QdrantVectorStore:
@@ -12,14 +19,20 @@ class QdrantVectorStore:
         collection_name: str = "knowledgeforge",
         vector_size: int = 384,
     ):
-        self.client = QdrantClient(url=url)
+        self.client = QdrantClient(
+            url=url,
+            prefer_grpc=False,
+        )
+
         self.collection_name = collection_name
         self.vector_size = vector_size
 
         self._ensure_collection()
 
     def _ensure_collection(self) -> None:
-        if not self.client.collection_exists(self.collection_name):
+        if not self.client.collection_exists(
+            self.collection_name
+        ):
             self.client.create_collection(
                 collection_name=self.collection_name,
                 vectors_config=VectorParams(
@@ -35,7 +48,7 @@ class QdrantVectorStore:
     ) -> None:
         if len(documents) != len(vectors):
             raise ValueError(
-                "The number of documents must match the number of vectors."
+                "Number of documents must match number of vectors."
             )
 
         points = []
@@ -66,8 +79,6 @@ class QdrantVectorStore:
         query_filter = None
 
         if metadata_filter:
-            from qdrant_client.models import FieldCondition, Filter, MatchValue
-
             conditions = []
 
             for field, value in metadata_filter.items():
@@ -78,9 +89,7 @@ class QdrantVectorStore:
                     )
                 )
 
-            query_filter = Filter(
-                must=conditions,
-            )
+            query_filter = Filter(must=conditions)
 
         results = self.client.query_points(
             collection_name=self.collection_name,
@@ -94,10 +103,13 @@ class QdrantVectorStore:
             {
                 "score": result.score,
                 "text": result.payload.get("text", ""),
-                "metadata": result.payload.get("metadata", {}),
+                "metadata": result.payload.get(
+                    "metadata", {}
+                ),
             }
             for result in results
         ]
+
     def count(self) -> int:
         result = self.client.count(
             collection_name=self.collection_name,
