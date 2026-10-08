@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import Base, engine
 from app.db import models
 from app.api.v1 import workspaces
+from app.api.v1 import documents
 
 setup_logging()
 
@@ -48,6 +49,11 @@ app.include_router(
     workspaces.router,
     prefix="/api/v1",
 )
+app.include_router(
+    documents.router,
+    prefix="/api/v1",
+)
+
 @app.get("/")
 def root():
     logger.info("Root endpoint accessed")

@@ -15,6 +15,7 @@ class RAGRequest(BaseModel):
     query: str = Field(..., min_length=1)
     top_k: int = Field(default=5, ge=1, le=20)
     metadata_filter: dict[str, Any] | None = None
+    workspace_id: str
     temperature: float = Field(default=0.2, ge=0.0, le=2.0)
     max_tokens: int = Field(default=500, ge=1, le=4096)
 
@@ -26,6 +27,7 @@ async def stream_rag(request: RAGRequest):
     async def event_generator():
         async for event in rag.stream_with_sources(
             query=request.query,
+            workspace_id=request.workspace_id,
             top_k=request.top_k,
             metadata_filter=request.metadata_filter,
             temperature=request.temperature,
