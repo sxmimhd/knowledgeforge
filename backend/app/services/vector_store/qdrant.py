@@ -45,6 +45,7 @@ class QdrantVectorStore:
         self,
         documents: list[dict[str, Any]],
         vectors: list[list[float]],
+        workspace_id: str | None = None,
     ) -> None:
         if len(documents) != len(vectors):
             raise ValueError(
@@ -60,7 +61,10 @@ class QdrantVectorStore:
                     vector=vector,
                     payload={
                         "text": document["text"],
-                        "metadata": document.get("metadata", {}),
+                        "metadata": {
+                            **document.get("metadata", {}),
+                            "workspace_id": workspace_id,
+                        },
                     },
                 )
             )

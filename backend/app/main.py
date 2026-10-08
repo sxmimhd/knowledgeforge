@@ -7,6 +7,9 @@ from app.core.lifespan import lifespan
 from app.core.logging import setup_logging
 from app.api.router import api_router
 from fastapi.middleware.cors import CORSMiddleware
+from app.db.database import Base, engine
+from app.db import models
+from app.api.v1 import workspaces
 
 setup_logging()
 
@@ -38,10 +41,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+Base.metadata.create_all(bind=engine)
 app.include_router(api_router)
 app.include_router(rag.router, prefix="/api/v1")
-
+app.include_router(
+    workspaces.router,
+    prefix="/api/v1",
+)
 @app.get("/")
 def root():
     logger.info("Root endpoint accessed")

@@ -19,6 +19,7 @@ class Settings(BaseSettings):
         env_file=".env",
         case_sensitive=False,
     )
-
+    
+    database_url: str = "postgresql+psycopg://knowledgeforge:knowledgeforge@localhost:5432/knowledgeforge"
 
 settings = Settings()

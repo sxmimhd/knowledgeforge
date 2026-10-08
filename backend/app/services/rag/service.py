@@ -55,11 +55,13 @@ Knowledge Context:
         query: str,
         top_k: int,
         metadata_filter: dict[str, Any] | None,
+        workspace_id: str | None,
     ):
         results = self.retrieval.retrieve(
             query=query,
             top_k=top_k,
             metadata_filter=metadata_filter,
+            workspace_id=workspace_id,
         )
 
         context_parts = []
@@ -107,6 +109,7 @@ Knowledge Context:
         query: str,
         top_k: int = 5,
         metadata_filter: dict[str, Any] | None = None,
+        workspace_id: str | None = None,
         temperature: float = 0.2,
         max_tokens: int = 500,
     ) -> dict[str, Any]:
@@ -115,6 +118,7 @@ Knowledge Context:
             query=query,
             top_k=top_k,
             metadata_filter=metadata_filter,
+            workspace_id=workspace_id,
         )
 
         answer = await self.llm.generate(
@@ -134,6 +138,7 @@ Knowledge Context:
         query: str,
         top_k: int = 5,
         metadata_filter: dict[str, Any] | None = None,
+        workspace_id: str | None = None,
         temperature: float = 0.2,
         max_tokens: int = 500,
     ):
@@ -141,6 +146,7 @@ Knowledge Context:
             query=query,
             top_k=top_k,
             metadata_filter=metadata_filter,
+            workspace_id=workspace_id,
         )
 
         async for token in self.llm.stream(
@@ -155,6 +161,7 @@ Knowledge Context:
         query: str,
         top_k: int = 5,
         metadata_filter: dict[str, Any] | None = None,
+        workspace_id: str | None = None,
         temperature: float = 0.2,
         max_tokens: int = 500,
     ):
@@ -162,6 +169,7 @@ Knowledge Context:
             query=query,
             top_k=top_k,
             metadata_filter=metadata_filter,
+            workspace_id=workspace_id,
         )
 
         yield {

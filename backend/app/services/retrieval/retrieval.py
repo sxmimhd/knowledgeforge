@@ -18,12 +18,17 @@ class RetrievalService:
         query: str,
         top_k: int = 5,
         metadata_filter: dict[str, Any] | None = None,
+        workspace_id: str | None = None,
     ) -> list[dict[str, Any]]:
         if not query.strip():
             return []
 
         query_vector = self.embeddings.embed_text(query)
 
+        filters = dict(metadata_filter or {})
+        if workspace_id:
+            filters["workspace_id"] = workspace_id
+            
         results = self.vector_store.search(
             query_vector=query_vector,
             top_k=top_k,
