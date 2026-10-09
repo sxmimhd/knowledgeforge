@@ -31,6 +31,7 @@ class WorkspaceIngestionService:
         path = Path(file_path)
 
         extracted = self.extractor.extract(path)
+        display_filename = original_filename or path.name
         extracted["metadata"]["filename"] = original_filename or path.name
         extracted["metadata"]["source"] = original_filename or path.name
 
@@ -69,7 +70,7 @@ class WorkspaceIngestionService:
         return {
             "document_id": document_id,
             "workspace_id": workspace_id,
-            "filename": path.name,
+            "filename": display_filename,
             "file_type": path.suffix.lower(),
             "characters": len(extracted["text"]),
             "chunks": len(chunks),
