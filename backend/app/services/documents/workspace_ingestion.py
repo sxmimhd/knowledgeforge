@@ -25,11 +25,14 @@ class WorkspaceIngestionService:
         file_path: str,
         workspace_id: str,
         document_id: str,
+        original_filename: str | None = None,
     ) -> dict[str, Any]:
 
         path = Path(file_path)
 
         extracted = self.extractor.extract(path)
+        extracted["metadata"]["filename"] = original_filename or path.name
+        extracted["metadata"]["source"] = original_filename or path.name
 
         chunks = self.chunker.chunk(
             extracted["text"],

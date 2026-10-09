@@ -19,6 +19,7 @@ class RetrievalService:
         top_k: int = 5,
         metadata_filter: dict[str, Any] | None = None,
         workspace_id: str | None = None,
+        min_score: float = 0.25,
     ) -> list[dict[str, Any]]:
         if not query.strip():
             return []
@@ -28,15 +29,17 @@ class RetrievalService:
         filters = dict(metadata_filter or {})
         if workspace_id:
             filters["workspace_id"] = workspace_id
-            
+
         results = self.vector_store.search(
             query_vector=query_vector,
             top_k=top_k,
-            metadata_filter=metadata_filter,
+            metadata_filter=filters or None,
         )
 
-        return results
-
+        return [
+            result for result in results
+            if result.get("score", 0.0) >= min_score
+        ]
     def build_context(
         self,
         results: list[dict[str, Any]],

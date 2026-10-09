@@ -121,3 +121,18 @@ class QdrantVectorStore:
         )
 
         return result.count
+
+    
+    def delete_document(self, document_id: str) -> None:
+        self.client.delete(
+            collection_name=self.collection_name,
+            points_selector=Filter(
+                must=[
+                    FieldCondition(
+                        key="metadata.document_id",
+                        match=MatchValue(value=document_id),
+                    )
+                ]
+            ),
+            wait=True,
+        )

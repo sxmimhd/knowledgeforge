@@ -1,7 +1,8 @@
+
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -15,20 +16,11 @@ class Workspace(Base):
     __tablename__ = "workspaces"
 
     id: Mapped[str] = mapped_column(
-        String(36),
-        primary_key=True,
-        default=lambda: str(uuid4()),
+        String(36), primary_key=True, default=lambda: str(uuid4())
     )
-
-    name: Mapped[str] = mapped_column(
-        String(255),
-        nullable=False,
-    )
-
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=utc_now,
-        nullable=False,
+        DateTime(timezone=True), default=utc_now, nullable=False
     )
 
     documents: Mapped[list["Document"]] = relationship(
@@ -40,40 +32,26 @@ class Workspace(Base):
 class Document(Base):
     __tablename__ = "documents"
 
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id",
+            "content_hash",
+            name="uq_documents_workspace_content_hash",
+        ),
+    )
+
     id: Mapped[str] = mapped_column(
-        String(36),
-        primary_key=True,
-        default=lambda: str(uuid4()),
+        String(36), primary_key=True, default=lambda: str(uuid4())
     )
-
     workspace_id: Mapped[str] = mapped_column(
-        String(36),
-        ForeignKey("workspaces.id"),
-        nullable=False,
-        index=True,
+        String(36), ForeignKey("workspaces.id"), nullable=False, index=True
     )
-
-    filename: Mapped[str] = mapped_column(
-        String(255),
-        nullable=False,
-    )
-
-    file_type: Mapped[str] = mapped_column(
-        String(20),
-        nullable=False,
-    )
-
-    source: Mapped[str] = mapped_column(
-        String(1000),
-        nullable=False,
-    )
-
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    file_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    source: Mapped[str] = mapped_column(String(1000), nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=utc_now,
-        nullable=False,
+        DateTime(timezone=True), default=utc_now, nullable=False
     )
 
-    workspace: Mapped[Workspace] = relationship(
-        back_populates="documents",
-    )
+    workspace: Mapped[Workspace] = relationship(back_populates="documents")
