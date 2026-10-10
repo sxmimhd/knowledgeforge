@@ -9,6 +9,7 @@ dependencies = [
     "fastapi>=0.141.1",
     "numpy>=2.4.6",
     "openai>=3.3.1",
+    "pg8000>=1.31.5",
     "psycopg[binary]>=3.3.6",
     "pydantic-settings>=2.14.2",
     "pypdf>=6.19.0",
@@ -29,3 +30,9 @@ torch = { index = "pytorch" }
 name = "pytorch"
 url = "https://download.pytorch.org/whl/cu128"
 explicit = true
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
