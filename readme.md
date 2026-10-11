@@ -4,6 +4,10 @@
 
 KnowledgeForge transforms documents into searchable knowledge and lets users ask questions grounded in their own information. It combines document ingestion, semantic retrieval, vector search, and locally hosted LLM inference in a FastAPI backend.
 
+<p align="center">
+  <img src="kf.png" alt="knowledge forge" width="100%">
+</p>
+
 ## Core Features
 
 - **Document ingestion:** Upload `.txt`, `.md`, and `.pdf` documents.
